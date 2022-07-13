@@ -789,6 +789,9 @@ static Arg g_args[] = {
 
 void attoAppInit(struct AAppProctable *proctable) {
 	//profilerInit();
+	
+	FILE *fileMTL = fopen("output.mtl", "w");
+	fclose(fileMTL);
 
 	g.collection_chain = NULL;
 	g.patches = NULL;

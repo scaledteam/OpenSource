@@ -178,6 +178,9 @@ static int materialLoad(struct IFile *file, struct ICollection *coll, Material *
 	if (success && ctx.mat->base_texture.texture)
 		ctx.mat->average_color = ctx.mat->base_texture.texture->avg_color;
 
+	// name
+	sprintf(ctx.mat->name, "%s", ctx.mat->base_texture.texture->name);
+	
 	stackFreeUpToPosition(tmp, buffer);
 
 	return success;

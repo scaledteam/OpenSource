@@ -590,6 +590,13 @@ static int faceMaterialCompare(const void *a, const void *b) {
 
 static enum BSPLoadResult bspLoadModelDraws(const struct LoadModelContext *ctx, struct Stack *persistent,
 		struct BSPModel *model) {
+	
+	FILE *fileOBJ = fopen("output.obj", "w");
+	//FILE *fileMTL = fopen("output.mtl", "w");
+	//fclose(fileMTL);
+	
+	fprintf(fileOBJ, "mtllib output.mtl\n");
+	
 	void * const tmp_cursor = stackGetCursor(ctx->tmp);
 
 	struct BSPModelVertex * const vertices_buffer
@@ -670,15 +677,44 @@ static enum BSPLoadResult bspLoadModelDraws(const struct LoadModelContext *ctx, 
 		} else {
 			bspLoadFace(ctx, face, vertices_buffer + vertex_pos, indices_buffer + indices_pos, vertex_pos - vbo_offset);
 		}
+		
+                fprintf(fileOBJ, "usemtl %s\n", face->material->name);
 
 		for (int i = 0; i < face->vertices; ++i) {
-			vertices_buffer[vertex_pos + i].average_color.r =
-				(uint8_t)(face->material->average_color.x * 255.f);
-			vertices_buffer[vertex_pos + i].average_color.g =
-				(uint8_t)(face->material->average_color.y * 255.f);
-			vertices_buffer[vertex_pos + i].average_color.b =
-				(uint8_t)(face->material->average_color.z * 255.f);
+			fprintf(fileOBJ, "v %f %f %f\n", vertices_buffer[vertex_pos + i].vertex.x*.01, vertices_buffer[vertex_pos + i].vertex.z*.01, -vertices_buffer[vertex_pos + i].vertex.y*.01);
 		}
+		
+		if (face->dispinfo) {
+			int power = face->dispinfo->power;
+			power *= power;
+			power++;
+			
+			for (int y = 0; y < power; y++) {
+				for (int x = 0; x < power-1; x++) {
+					fprintf(fileOBJ, "f %d %d %d %d\n",
+						vertex_pos + (x+0) + (y+0) * power+1,
+						vertex_pos + (x+1) + (y+0) * power+1,
+						vertex_pos + (x+1) + (y+1) * power+1,
+						vertex_pos + (x+0) + (y+1) * power+1
+					);
+				}
+			}
+		} else {
+			fprintf(fileOBJ, "f");
+			for (int i = 0; i < face->vertices; ++i) {
+				fprintf(fileOBJ, " %d", vertex_pos+i+1);
+			}
+			fprintf(fileOBJ, "\n");
+		}
+		
+		for (int i = 0; i < face->vertices; ++i) {
+                       vertices_buffer[vertex_pos + i].average_color.r =
+                               (uint8_t)(face->material->average_color.x * 255.f);
+                       vertices_buffer[vertex_pos + i].average_color.g =
+                               (uint8_t)(face->material->average_color.y * 255.f);
+                       vertices_buffer[vertex_pos + i].average_color.b =
+                               (uint8_t)(face->material->average_color.z * 255.f);
+                }
 
 		vertex_pos += face->vertices;
 		indices_pos += face->indices;
@@ -695,6 +731,8 @@ static enum BSPLoadResult bspLoadModelDraws(const struct LoadModelContext *ctx, 
 	renderBufferCreate(&model->vbo, RBufferType_Vertex, sizeof(struct BSPModelVertex) * vertex_pos, vertices_buffer);
 
 	stackFreeUpToPosition(ctx->tmp, tmp_cursor);
+	
+	fclose(fileOBJ);
 	return BSPLoadResult_Success;
 }
 

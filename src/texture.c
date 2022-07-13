@@ -282,7 +282,7 @@ static int textureUploadMipmapType(struct Stack *tmp, struct IFile *file, size_t
 	return 1;
 }
 
-static int textureLoad(struct IFile *file, Texture *tex, struct Stack *tmp, RTexType type) {
+static int textureLoad(struct IFile *file, const char *name, Texture *tex, struct Stack *tmp, RTexType type) {
 	struct VTFHeader hdr;
 	size_t cursor = 0;
 	int retval = 0;
@@ -341,6 +341,9 @@ static int textureLoad(struct IFile *file, Texture *tex, struct Stack *tmp, RTex
 				aVec3fMulf(aVec3f(1.f/31.f, 1.f/63.f, 1.f/31.f), 1.f / pixels_count));
 		//PRINTF("Average color %f %f %f", tex->avg_color.x, tex->avg_color.y, tex->avg_color.z);
 	}
+	
+	// name
+	sprintf(tex->name, "%s", name);
 
 	cursor += vtfImageSize(hdr.lores_format, hdr.lores_width, hdr.lores_height);
 
@@ -371,7 +374,7 @@ const Texture *textureGet(const char *name, struct ICollection *collection, stru
 
 	struct Texture localtex;
 	renderTextureInit(&localtex.texture);
-	if (textureLoad(texfile, &localtex, tmp, RTexType_2D) == 0) {
+	if (textureLoad(texfile, name, &localtex, tmp, RTexType_2D) == 0) {
 		PRINTF("Texture \"%s\" found, but could not be loaded", name);
 	} else {
 		cachePutTexture(name, &localtex);

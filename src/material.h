@@ -26,6 +26,7 @@ typedef struct Material {
 	MShader shader;
 	struct AVec3f average_color;
 	MTexture base_texture;
+	char name[128];
 } Material;
 
 const Material *materialGet(const char *name, struct ICollection *collection, struct Stack *tmp);
