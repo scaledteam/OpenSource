@@ -33,9 +33,9 @@ const struct Material *cacheGetMaterial(const char *name) {
 void cachePutMaterial(const char *name, const struct Material *mat /* copied */) {
 	aHashInsert(&g.materials, name, mat);
 	FILE *fileMTL = fopen("output.mtl", "a");
-	fprintf(fileMTL, "newmtl %s\n", name);
+	fprintf(fileMTL, "newmtl %s\n", mat->name);
 	fprintf(fileMTL, "Kd %f %f %f\n", mat->average_color.x, mat->average_color.y, mat->average_color.z);
-	//fprintf(fileMTL, "map_Kd %s\n", name);
+	fprintf(fileMTL, "map_Kd textures/%s.bmp\n", mat->name);
 	fprintf(fileMTL, "\n");
 	fclose(fileMTL);
 }

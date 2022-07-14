@@ -315,8 +315,21 @@ static int textureLoad(struct IFile *file, const char *name, Texture *tex, struc
 	*/
 
 	cursor += hdr.header_size;
+	
+	// set name of material
+	char tmpname[128] = {0};
+	for (int i = 0; i < 128; i++) {
+		if (name[i] == 0)
+			break;
+		
+		if (name[i] == '/')
+			tmpname[i] = '-';
+		else
+			tmpname[i] = name[i];
+	}
+	sprintf(tex->name, "%s", tmpname);
 
-	/* Compute averaga color from lowres image */
+	/* Compute average color from lowres image */
 	void *pre_alloc_cursor = stackGetCursor(tmp);
 	if (hdr.lores_format != VTFImage_DXT1 && hdr.lores_format != VTFImage_DXT5) {
 		PRINTF("Not implemented lores texture format: %s", vtfFormatStr(hdr.lores_format));
@@ -340,10 +353,62 @@ static int textureLoad(struct IFile *file, const char *name, Texture *tex, struc
 		tex->avg_color = aVec3fMul(tex->avg_color,
 				aVec3fMulf(aVec3f(1.f/31.f, 1.f/63.f, 1.f/31.f), 1.f / pixels_count));
 		//PRINTF("Average color %f %f %f", tex->avg_color.x, tex->avg_color.y, tex->avg_color.z);
+		
+		// write bmp textures
+		int w = hdr.lores_width;
+		int h = hdr.lores_height;
+		FILE *f;
+		unsigned char *img = NULL;
+		int filesize = 54 + 3*w*h;  //w is your image width, h is image height, both int
+
+		img = (unsigned char *)malloc(3*w*h);
+		memset(img,0,3*w*h);
+
+		for (int i = 0; i < pixels_count; ++i) {
+			float r = 256.f/31.f * (pixels[i] >> 11);
+			float g = 256.f/63.f * ((pixels[i] >> 5) & 0x3f);
+			float b = 256.f/31.f * (pixels[i] & 0x1f);
+			if (r > 255) r=255;
+			if (g > 255) g=255;
+			if (b > 255) b=255;
+			img[i*3+2] = (unsigned char)r;
+			img[i*3+1] = (unsigned char)g;
+			img[i*3+0] = (unsigned char)b;
+		}
+
+		unsigned char bmpfileheader[14] = {'B','M', 0,0,0,0, 0,0, 0,0, 54,0,0,0};
+		unsigned char bmpinfoheader[40] = {40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0, 24,0};
+		unsigned char bmppad[3] = {0,0,0};
+
+		bmpfileheader[ 2] = (unsigned char)(filesize    );
+		bmpfileheader[ 3] = (unsigned char)(filesize>> 8);
+		bmpfileheader[ 4] = (unsigned char)(filesize>>16);
+		bmpfileheader[ 5] = (unsigned char)(filesize>>24);
+
+		bmpinfoheader[ 4] = (unsigned char)(       w    );
+		bmpinfoheader[ 5] = (unsigned char)(       w>> 8);
+		bmpinfoheader[ 6] = (unsigned char)(       w>>16);
+		bmpinfoheader[ 7] = (unsigned char)(       w>>24);
+		bmpinfoheader[ 8] = (unsigned char)(       h    );
+		bmpinfoheader[ 9] = (unsigned char)(       h>> 8);
+		bmpinfoheader[10] = (unsigned char)(       h>>16);
+		bmpinfoheader[11] = (unsigned char)(       h>>24);
+
+		char bmpname[256] = {0};
+		sprintf(bmpname, "textures/%s.bmp", tmpname);
+		PRINTF("Writing file %s", bmpname);
+		f = fopen(bmpname, "wb");
+		fwrite(bmpfileheader,1,14,f);
+		fwrite(bmpinfoheader,1,40,f);
+		for(int i=0; i<h; i++)
+		{
+		    fwrite(img+(w*(h-i-1)*3),3,w,f);
+		    fwrite(bmppad,1,(4-(w*3)%4)%4,f);
+		}
+
+		free(img);
+		fclose(f);
 	}
-	
-	// name
-	sprintf(tex->name, "%s", name);
 
 	cursor += vtfImageSize(hdr.lores_format, hdr.lores_width, hdr.lores_height);
 
