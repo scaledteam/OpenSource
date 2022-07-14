@@ -1,4 +1,9 @@
-### This branch was made to add export functionality to this program.
+## This branch was made to add export functionality to this program.
+## Instructions
+- Build a project using instructions below
+- Create directory "textures" into "build" directory
+- Run a map
+Your output file will generated in "build" directory, and textures will be exported into "build/textures" directory.
 
 OpenSource
 ==========
