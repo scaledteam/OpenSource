@@ -3,7 +3,8 @@
 - Build a project using instructions below
 - Create directory "textures" into "build" directory
 - Run a map
-Your output file will generated in "build" directory, and textures will be exported into "build/textures" directory.
+
+Your output files "output.obj, output.mtl" will generated in "build" directory, and textures will be exported into "build/textures" directory.
 
 OpenSource
 ==========
