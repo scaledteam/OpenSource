@@ -324,6 +324,8 @@ static int textureLoad(struct IFile *file, const char *name, Texture *tex, struc
 		
 		if (name[i] == '/')
 			tmpname[i] = '-';
+		else if (name[i] == '\\')
+			tmpname[i] = '-';
 		else
 			tmpname[i] = name[i];
 	}
@@ -354,9 +356,54 @@ static int textureLoad(struct IFile *file, const char *name, Texture *tex, struc
 				aVec3fMulf(aVec3f(1.f/31.f, 1.f/63.f, 1.f/31.f), 1.f / pixels_count));
 		//PRINTF("Average color %f %f %f", tex->avg_color.x, tex->avg_color.y, tex->avg_color.z);
 		
+	}
+
+	cursor += vtfImageSize(hdr.lores_format, hdr.lores_width, hdr.lores_height);
+
+	{
+		size_t cursor2 = cursor;
+		int miplevel = 0;
+		for (int mip = hdr.mipmap_count - 1; mip > miplevel; --mip) {
+			const unsigned int mip_width = hdr.width >> mip;
+			const unsigned int mip_height = hdr.height >> mip;
+			const int mip_image_size = vtfImageSize(hdr.hires_format, mip_width, mip_height);
+			cursor2 += mip_image_size * hdr.frames;
+
+			/*PRINTF("cur: %d; size: %d, mip: %d, %dx%d",
+					cursor2, mip_image_size, mip, mip_width, mip_height);
+			*/
+		}
+
+		void *dst_texture = textureUnpackToTemp(tmp, file, cursor2, hdr.width, hdr.height, hdr.hires_format);
+		if (!dst_texture) {
+			PRINT("Failed to unpack texture");
+			return 0;
+		}
+		
+		uint16_t *pixels = dst_texture;
+		
+		//uint16_t *pixels = textureUnpackToTemp(tmp, file, cursor, hdr.width, hdr.height, hdr.hires_format);
+
+		if (!pixels) {
+			PRINT("Cannot unpack lowres image");
+			return 0;
+		}
+
+		tex->avg_color = aVec3ff(0);
+		const int pixels_count = hdr.width * hdr.height;
+		for (int i = 0; i < pixels_count; ++i) {
+			tex->avg_color.x += (pixels[i] >> 11);
+			tex->avg_color.y += (pixels[i] >> 5) & 0x3f;
+			tex->avg_color.z += (pixels[i] & 0x1f);
+		}
+
+		tex->avg_color = aVec3fMul(tex->avg_color,
+				aVec3fMulf(aVec3f(1.f/31.f, 1.f/63.f, 1.f/31.f), 1.f / pixels_count));
+		//PRINTF("Average color %f %f %f", tex->avg_color.x, tex->avg_color.y, tex->avg_color.z);
+		
 		// write bmp textures
-		int w = hdr.lores_width;
-		int h = hdr.lores_height;
+		int w = hdr.width;
+		int h = hdr.height;
 		FILE *f;
 		unsigned char *img = NULL;
 		int filesize = 54 + 3*w*h;  //w is your image width, h is image height, both int
@@ -409,13 +456,6 @@ static int textureLoad(struct IFile *file, const char *name, Texture *tex, struc
 		free(img);
 		fclose(f);
 	}
-
-	cursor += vtfImageSize(hdr.lores_format, hdr.lores_width, hdr.lores_height);
-
-	/*
-	PRINTF("Texture lowres: %dx%d, %s; mips %d; header_size: %u",
-		hdr.lores_width, hdr.lores_height, vtfFormatStr(hdr.lores_format), hdr.mipmap_count, hdr.header_size);
-	*/
 
 	for (int mip = 0; mip <= 0/*< hdr.mipmap_count*/; ++mip) {
 		retval = textureUploadMipmapType(tmp, file, cursor, &hdr, mip, &tex->texture, type);

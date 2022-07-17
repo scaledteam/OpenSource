@@ -686,6 +686,18 @@ static enum BSPLoadResult bspLoadModelDraws(const struct LoadModelContext *ctx, 
 		}
 		
 		if (face->dispinfo) {
+			/*if (face->dispinfo->power == 2) {
+				fprintf(fileOBJ, "f %d/%d %d/%d %d/%d %d/%d\n",
+					vertex_pos + 1,
+					vertex_pos + 1,
+					vertex_pos + 21,
+					vertex_pos + 21,
+					vertex_pos + 25,
+					vertex_pos + 25,
+					vertex_pos + 5,
+					vertex_pos + 5
+				);
+			}*/
 			int power = face->dispinfo->power;
 			power *= power;
 			power++;
