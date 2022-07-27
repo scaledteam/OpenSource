@@ -682,7 +682,7 @@ static enum BSPLoadResult bspLoadModelDraws(const struct LoadModelContext *ctx, 
 
 		for (int i = 0; i < face->vertices; ++i) {
 			fprintf(fileOBJ, "v %f %f %f\n", vertices_buffer[vertex_pos + i].vertex.x*.02, vertices_buffer[vertex_pos + i].vertex.z*.02, -vertices_buffer[vertex_pos + i].vertex.y*.02);
-			fprintf(fileOBJ, "vt %f %f\n", vertices_buffer[vertex_pos + i].tex_uv.x*.001, vertices_buffer[vertex_pos + i].tex_uv.y*.001);
+			fprintf(fileOBJ, "vt %f %f\n", vertices_buffer[vertex_pos + i].tex_uv.x*.001, -vertices_buffer[vertex_pos + i].tex_uv.y*.001);
 		}
 		
 		if (face->dispinfo) {
@@ -704,7 +704,7 @@ static enum BSPLoadResult bspLoadModelDraws(const struct LoadModelContext *ctx, 
 			
 			for (int y = 0; y < power; y++) {
 				for (int x = 0; x < power-1; x++) {
-					fprintf(fileOBJ, "f %d/%d %d/%d %d/%d %d/%d\n",
+					/*fprintf(fileOBJ, "f %d/%d %d/%d %d/%d %d/%d\n",
 						vertex_pos + (x+0) + (y+0) * power+1,
 						vertex_pos + (x+0) + (y+0) * power+1,
 						vertex_pos + (x+1) + (y+0) * power+1,
@@ -713,6 +713,16 @@ static enum BSPLoadResult bspLoadModelDraws(const struct LoadModelContext *ctx, 
 						vertex_pos + (x+1) + (y+1) * power+1,
 						vertex_pos + (x+0) + (y+1) * power+1,
 						vertex_pos + (x+0) + (y+1) * power+1
+					);*/
+					fprintf(fileOBJ, "f %d/%d %d/%d %d/%d %d/%d\n",
+						vertex_pos + (x+0) + (y+0) * power+1, // f
+						vertex_pos + (x+0) + (y+0) * power+1, // uv
+						vertex_pos + (x+1) + (y+0) * power+1, // f
+						vertex_pos + (x+1) + (y+0) * power+1, // uv
+						vertex_pos + (x+1) + (y+1) * power+1, // f
+						vertex_pos + (x+1) + (y+1) * power+1, // uv
+						vertex_pos + (x+0) + (y+1) * power+1, // f
+						vertex_pos + (x+0) + (y+1) * power+1  // uv
 					);
 				}
 			}
